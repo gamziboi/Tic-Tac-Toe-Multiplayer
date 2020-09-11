@@ -173,14 +173,14 @@ def playTurn(playerId):
 hostServer = input("HOST Server? ")
 yourTurn = False
 if hostServer == "y":
-    serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serversocket.bind(("localhost", 8089))
-    serversocket.listen(5)
     print("[TRE I RAD] Väntar på att någon ska ansluta...")
     playerId = 1
     while True:
-        connection, address = serversocket.accept()
-        connection = connection.recv(1024)
+        serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serversocket.bind(("localhost", 8089))
+        serversocket.listen(1)
+        connections, address = serversocket.accept()
+        connection = connections.recv(1024)
         receivedData = json.loads(connection.decode())
 
         if receivedData:
@@ -190,6 +190,13 @@ if hostServer == "y":
                 playerInfo[2]["username"] = joinedUser
                 print("[TRE I RAD]", joinedUser, "joined")
                 print("[TRE I RAD] Väntar på att", joinedUser, "ska spela")
+                encodedGame = json.dumps({
+                    "action": "makeMove",
+                    "data": currentGameArray,
+                    "username": playerInfo[1]["nickname"]
+                }).encode()
+                connections.send(encodedGame)
+                serversocket.close()
             
             if receivedData["action"] == "makeMove":
                 currentGameArray = receivedData["data"]
@@ -197,9 +204,9 @@ if hostServer == "y":
                 encodedGame = json.dumps({
                     "action": "makeMove",
                     "data": currentGameArray,
-                    "username": playerInfo[1]["username"]
+                    "username": playerInfo[1]["nickname"]
                 }).encode()
-                serversocket.send(encodedGame)
+                connections.send(encodedGame)
                 
 else:
     firstLaunch = True
@@ -209,26 +216,27 @@ else:
 
         if firstLaunch:
             firstLaunch = False
-            yourTurn = True
+            print("ANSLUTER")
             encodedGame = json.dumps({
                 "action": "join",
                 "data": currentGameArray,
-                "username": playerInfo[2]["username"]
+                "username": playerInfo[2]["nickname"]
             }).encode()
+            print("ANSLUTEN")
             clientsocket.send(encodedGame)
         else:
-            if (yourTurn) or (receivedData["action"] == "makeMove"):
+            connection = clientsocket.recv(1024)
+            receivedData = json.loads(connection.decode())
+            if receivedData["action"] == "makeMove":
                 print("[TRE I RAD] Din tur!")
                 playTurn(2)
                 encodedGame = json.dumps({
                     "action": "makeMove",
                     "data": currentGameArray,
-                    "username": playerInfo[2]["username"]
+                    "username": playerInfo[2]["nickname"]
                 }).encode()
+                sleep(1)
                 clientsocket.send(encodedGame)
                 print("sent")
-                yourTurn = False
-            
 
-    # while True:
         
