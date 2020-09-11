@@ -1,7 +1,7 @@
 import keyboard, socket, json
 from time import sleep
 from os import system
-from threading import Thread
+
 currentGameArray = [
     ["   ", "   ", "   "], 
     ["   ", "   ", "   "], 
@@ -27,13 +27,12 @@ playerInfo = {
     },
     2: {
         "playerModel": "O",
-        "nickname": "sopa"
+        "nickname": "loser"
     }
 }
-winner = -1
 currentSlot = {
-    "x": 0, # vönster höger
-    "y": 0, # upp ner
+    "x": 0,
+    "y": 0,
     "recentX": 0,
     "recentY": 0,
     "recentModel": False
@@ -68,11 +67,10 @@ def updateBoard(playerModel):
     system("cls")
     displayBoard()
     print("[LEFT-ARROW] To Move Left\n[RIGHT-ARROW] To Move Right\n[UP-ARROW] To Move Up\n[DOWN-ARROW] To Move Down\n")
-    # print("currentslotY:", currentSlot["y"], " | currentslotX: ", currentSlot["x"])
     if isSlotEmpty():
-        print("DU KAN LÄGGA HÄR")
+        print("YOU CAN PLACE HERE")
     else:
-        print("DU KAN INTE LÄGGA HÄR")
+        print("YOU CANNOT PLACE HERE")
     sleep(0.3)
 
 def displayBoard():
@@ -90,10 +88,6 @@ def displayBoard():
         tempString = tempString.replace(" " + currentIndex + " ", currentSlot)
     system("cls")
     print(f"CURRENT GAME | {player1} vs {player2}\n",tempString)
-
-    # print(currentGameArray[0])
-    # print(currentGameArray[1])
-    # print(currentGameArray[2])
 
 def hasPlayerWon(playerId):
     playerModel = " " + playerInfo[playerId]["playerModel"] + " "
@@ -140,33 +134,34 @@ def makeMove(player):
                 displayBoard()
                 break
             else:
-                print("Det är inte ens ledigt här", currentSlot["recentModel"])
+                print("Cannot place here")
             sleep(0.6)
         elif keyboard.is_pressed("-"):
             exit(0)
 
-def playTurn(playerId):
-    displayBoard()
-    makeMove(playerId)
-
-
-hostServer = input("HOST Server? (y/n): ")
-
 def gameHandler(playerId, receivedData, socket):
     global currentGameArray, currentSlot
+    
     if receivedData["action"] == "connected":
+        socket.send(json.dumps({"action": "updateUsername", "playerId": playerId, "username": playerInfo[playerId]["nickname"]}).encode())
         encodedGame = json.dumps({
             "action": "join",
             "data": currentGameArray,
-            "username": playerInfo[playerId]["nickname"]
+            "username": receivedData["username"]
         }).encode()
-        print("ANSLUTEN")
+        print("[SERVER] Connected")
+        sleep(1.5)
         socket.send(encodedGame)
+
+    elif receivedData["action"] == "updateUsername":
+        playerInfo[receivedData["playerId"]]["nickname"] = receivedData["username"]
+
     elif receivedData["action"] == "join":
         joinedUser = receivedData["username"]
-        playerInfo[playerId]["username"] = joinedUser
-        print("[TRE I RAD]", joinedUser, "joined")
-        print("[TRE I RAD] Väntar på att", joinedUser, "ska spela")
+        print("[TIC TAC TOE]", joinedUser, "joined")
+        print("[TIC TAC TOE] Waiting for", joinedUser, "to play..")
+        socket.send(json.dumps({"action": "updateUsername", "playerId": playerId, "username": playerInfo[playerId]["nickname"]}).encode())
+
         encodedGame = json.dumps({
             "action": "makeMove",
             "data": currentGameArray,
@@ -174,15 +169,19 @@ def gameHandler(playerId, receivedData, socket):
             "currentSlot": currentSlot
         }).encode()
         socket.send(encodedGame)
+
     elif receivedData["action"] == "makeMove":
         currentGameArray = receivedData["data"]
         currentSlot = receivedData["currentSlot"]
         displayBoard()
-        print("[TRE I RAD] Din tur!")
+        print("[TIC TAC TOE] Your turn")
         sleep(1.5)
-        playTurn(playerId)
+
+        displayBoard()
+        makeMove(playerId)
         if hasPlayerWon(playerId):
-            print("[VINNARE] Du vann spelet")
+            displayBoard()
+            print("[WINNER] You WON!")
             socket.send(json.dumps({
                 "action": "winner",
                 "username": playerInfo[playerId]["nickname"],
@@ -190,6 +189,8 @@ def gameHandler(playerId, receivedData, socket):
                 "currentSlot": currentSlot
             }).encode())
             sleep(5)
+            quit()
+
         else:
             encodedGame = json.dumps({
                 "action": "makeMove",
@@ -199,19 +200,25 @@ def gameHandler(playerId, receivedData, socket):
             }).encode()
             socket.send(encodedGame)
             displayBoard()
+
     elif receivedData["action"] == "winner":
         currentGameArray = receivedData["data"]
         currentSlot = receivedData["currentSlot"]
         displayBoard()
-        print("[VINNARE]", receivedData["username"], "vann")
+        print("[WINNER]", receivedData["username"], "WON!")
+        quit()
     
+hostServer = input("HOST Server? (y/n): ")
+username = input("[TIC TAC TOE] Username: ")
 
 if hostServer == "y":
+    playerInfo[1]["nickname"] = username
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ipAddress = socket.gethostbyname(socket.gethostname())
-    print("[SERVER] Startar server på:", ipAddress)
-    print("[SERVER] Väntar på att någon ska ansluta...")
-    # serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 3)
+    ipAddress = socket.gethostbyname(socket.gethostname()) ## change this to your public ip if you wish to portforward 
+
+    print("[SERVER] Starting server on:", ipAddress)
+    print("[SERVER] Waiting for someone to connect...")
+
     serversocket.bind((ipAddress, 8089))
     serversocket.listen(1)
     connections, address = serversocket.accept()
@@ -220,21 +227,20 @@ if hostServer == "y":
         connection = connections.recv(4096)
         receivedData = json.loads(connection.decode())
         gameHandler(1, receivedData, connections)
-                   
+
 else:
-    firstLaunch = True
-    clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientsocket.connect(('192.168.1.203', 8089))
-    while True:
-        if firstLaunch:
-            firstLaunch = False
-            print("[SERVER] ANSLUTER")
-            gameHandler(2, {"action": "connected"}, clientsocket)
-            
-        else:
+
+    playerInfo[2]["nickname"] = username
+    serverIP = input("[SERVER] Enter server ip (must be local or port forwarded): ")
+    try:
+        print("[SERVER] Trying to connect to", serverIP)
+        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        clientsocket.connect((serverIP, 8089))
+
+        gameHandler(2, {"action": "connected", "username": username}, clientsocket)        
+        while True:
             connection = clientsocket.recv(4096)
             receivedData = json.loads(connection.decode())
             gameHandler(2, receivedData, clientsocket)
-
-
-        
+    except:
+        print("[SERVER] Couldn't Connect")
