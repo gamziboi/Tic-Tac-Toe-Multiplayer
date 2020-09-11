@@ -158,8 +158,8 @@ def gameHandler(playerId, receivedData, socket):
 
     elif receivedData["action"] == "join":
         joinedUser = receivedData["username"]
-        print("[TIC TAC TOE]", joinedUser, "joined")
-        print("[TIC TAC TOE] Waiting for", joinedUser, "to play..")
+        print("[SERVER]", joinedUser, "joined")
+        print("[TIC-TAC-TOE] Waiting for", joinedUser, "to play..")
         socket.send(json.dumps({"action": "updateUsername", "playerId": playerId, "username": playerInfo[playerId]["nickname"]}).encode())
 
         encodedGame = json.dumps({
@@ -174,7 +174,7 @@ def gameHandler(playerId, receivedData, socket):
         currentGameArray = receivedData["data"]
         currentSlot = receivedData["currentSlot"]
         displayBoard()
-        print("[TIC TAC TOE] Your turn")
+        print("[TIC-TAC-TOE] Your turn")
         sleep(1.5)
 
         displayBoard()
@@ -188,7 +188,6 @@ def gameHandler(playerId, receivedData, socket):
                 "data": currentGameArray,
                 "currentSlot": currentSlot
             }).encode())
-            sleep(5)
             quit()
 
         else:
@@ -209,7 +208,7 @@ def gameHandler(playerId, receivedData, socket):
         quit()
     
 hostServer = input("HOST Server? (y/n): ")
-username = input("[TIC TAC TOE] Username: ")
+username = input("[TIC-TAC-TOE] Username: ")
 
 if hostServer == "y":
     playerInfo[1]["nickname"] = username
