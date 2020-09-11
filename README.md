@@ -8,6 +8,7 @@ Play Tic Tac Toe with your friends on different machines.
 Connections are established with sockets, server & client.
 
 You control with the arrow keys on your keyboard.
+
 Works perfect on LAN and you can also portforward (port 8089 used default).
 
 ## Requirements
