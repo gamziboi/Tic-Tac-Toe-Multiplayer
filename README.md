@@ -1,8 +1,8 @@
 # Tic Tac Toe Multiplayer
-![](https://img.shields.io/badge/language-Python-Green)
-![](https://img.shields.io/badge/controls-Keyboard-Blue)
-![](https://img.shields.io/badge/connection-Sockets-Orange)
-![](https://img.shields.io/badge/game-TicTacToe-Purple)
+![https://www.python.org/](https://img.shields.io/badge/language-Python-Green)
+![https://sv.wikipedia.org/wiki/Keyboard](https://img.shields.io/badge/controls-Keyboard-Blue)
+![https://docs.python.org/3/library/socket.html](https://img.shields.io/badge/connection-Sockets-Orange)
+![https://en.wikipedia.org/wiki/Tic-tac-toe](https://img.shields.io/badge/game-TicTacToe-Purple)
 <!-- ![](https://img.shields.io/badge/connections-Sockets-Orange) -->
 Play Tic Tac Toe with your friends on different machines.
 Connections are established with sockets, server & client.
