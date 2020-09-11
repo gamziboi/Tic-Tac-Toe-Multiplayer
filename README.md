@@ -3,6 +3,7 @@
 [![Keyboard](https://img.shields.io/badge/controls-Keyboard-Blue)](https://sv.wikipedia.org/wiki/Keyboard)
 [![Sockets](https://img.shields.io/badge/connection-Sockets-Orange)](https://docs.python.org/3/library/socket.html) 
 [![TicTacToe](https://img.shields.io/badge/game-TicTacToe-Purple)](https://en.wikipedia.org/wiki/Tic-tac-toe) 
+
 Play Tic Tac Toe with your friends on different machines.
 Connections are established with sockets, server & client.
 
